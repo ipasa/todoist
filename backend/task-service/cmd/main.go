@@ -11,6 +11,7 @@ import (
 	"time"
 
 	_ "github.com/lib/pq"
+	"github.com/todoist/backend/pkg/jwt"
 	"github.com/todoist/backend/pkg/logger"
 	"github.com/todoist/backend/pkg/validator"
 	"github.com/todoist/backend/task-service/infrastructure/config"
@@ -43,12 +44,22 @@ func main() {
 	}
 	log.Info("connected to database")
 
+	// Initialize database schema
+	if err := initializeDatabase(db); err != nil {
+		log.WithError(err).Fatal("failed to initialize database")
+	}
+	log.Info("database initialized")
+
 	// Initialize dependencies
 	taskRepo := postgres.NewTaskRepository(db)
+	// Parse JWT expiry strings to time.Duration
+	accessTokenExpiry, _ := time.ParseDuration(cfg.JWTExpiry)
+	refreshTokenExpiry, _ := time.ParseDuration(cfg.RefreshTokenExpiry)
+	jwtService := jwt.NewService(cfg.JWTSecret, accessTokenExpiry, refreshTokenExpiry)
 	validatorInstance := validator.New()
 
 	// Initialize handlers
-	taskHandler := handler.NewTaskHandler(validatorInstance, log)
+	taskHandler := handler.NewTaskHandler(validatorInstance, log, taskRepo, jwtService)
 
 	// Initialize router
 	r := router.NewRouter(taskHandler, log)
@@ -92,4 +103,36 @@ func main() {
 	}
 
 	log.Info("server stopped")
+}
+
+// initializeDatabase creates the tables needed for the task service
+func initializeDatabase(db *sql.DB) error {
+	// Create tasks table
+	createTableSQL := `
+	CREATE TABLE IF NOT EXISTS tasks (
+		id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+		title VARCHAR(255) NOT NULL,
+		description TEXT,
+		status VARCHAR(50) NOT NULL DEFAULT 'pending',
+		priority INTEGER NOT NULL DEFAULT 1,
+		user_id UUID NOT NULL,
+		project_id UUID,
+		due_date TIMESTAMP,
+		created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+		updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+	);
+
+	-- Create indexes for better performance
+	CREATE INDEX IF NOT EXISTS idx_tasks_user_id ON tasks(user_id);
+	CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status);
+	CREATE INDEX IF NOT EXISTS idx_tasks_priority ON tasks(priority);
+	CREATE INDEX IF NOT EXISTS idx_tasks_project_id ON tasks(project_id);
+	`
+
+	// Execute the SQL
+	if _, err := db.Exec(createTableSQL); err != nil {
+		return fmt.Errorf("failed to create tasks table: %w", err)
+	}
+
+	return nil
 }

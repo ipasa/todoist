@@ -19,14 +19,21 @@ build: ## Build all services
 	cd backend/notification-service && go build -o ../../bin/notification-service ./cmd
 	cd backend/websocket-gateway && go build -o ../../bin/websocket-gateway ./cmd
 	cd backend/api-gateway && go build -o ../../bin/api-gateway ./cmd
-	@echo "Build complete!"
+	@echo "Backend build complete!"
+	cd frontend && npm run build
+	@echo "Frontend build complete!"
+	@echo "All services built successfully!"
 
 run-backend: ## Run all backend services
 	@echo "Starting backend services..."
-	docker-compose -f infrastructure/docker/docker-compose.yml up
+	docker-compose -f infrastructure/docker/docker-compose.yml up postgres rabbitmq redis auth-service task-service project-service notification-service websocket-gateway api-gateway mailhog
 
 run-frontend: ## Run frontend development server
 	cd frontend && npm run dev
+
+run-frontend-docker: ## Run frontend in Docker
+	@echo "Starting frontend in Docker..."
+	docker-compose -f infrastructure/docker/docker-compose.yml up frontend
 
 test: ## Run tests for all services
 	@echo "Running tests..."
@@ -44,6 +51,9 @@ migrate: ## Run database migrations
 
 docker-up: ## Start Docker containers
 	docker-compose -f infrastructure/docker/docker-compose.yml up -d
+
+docker-up-build: ## Start Docker containers with build
+	docker-compose -f infrastructure/docker/docker-compose.yml up -d --build
 
 docker-down: ## Stop Docker containers
 	docker-compose -f infrastructure/docker/docker-compose.yml down

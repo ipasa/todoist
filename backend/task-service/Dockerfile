@@ -9,6 +9,9 @@ COPY pkg ./pkg
 # Copy service files
 COPY task-service ./task-service
 
+# Copy infrastructure files
+COPY task-service/infrastructure ./task-service/infrastructure
+
 # Set working directory to service
 WORKDIR /build/task-service
 
@@ -26,7 +29,7 @@ RUN apk --no-cache add ca-certificates
 
 WORKDIR /root/
 
-# Copy the binary from builder
+# Copy binary from builder
 COPY --from=builder /build/task-service/main .
 
 EXPOSE 8002

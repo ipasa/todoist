@@ -184,6 +184,19 @@ services:
       - websocket-gateway
     restart: unless-stopped
 
+  # Frontend
+  frontend:
+    build:
+      context: ../../frontend
+      dockerfile: Dockerfile
+    container_name: todoist-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - api-gateway
+      - websocket-gateway
+    restart: unless-stopped
+
   # MailHog (Email testing)
   mailhog:
     image: mailhog/mailhog:latest

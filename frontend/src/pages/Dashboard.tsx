@@ -1,13 +1,21 @@
-import { useNavigate } from 'react-router-dom';
-import { useAuthStore } from '@/store/authStore';
+import { useNavigate } from "react-router-dom";
+import { useAuthStore } from "@/store/authStore";
+import { TaskForm } from "@/components/TaskForm";
+import { TaskList } from "@/components/TaskList";
+import { useState } from "react";
 
 export function Dashboard() {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    navigate("/login");
+  };
+
+  const handleTaskCreated = () => {
+    setRefreshTrigger((prev) => prev + 1);
   };
 
   return (
@@ -35,20 +43,9 @@ export function Dashboard() {
 
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">
-              Welcome to Todoist!
-            </h2>
-            <p className="text-gray-600 mb-4">
-              Your todo application is ready. Start organizing your tasks!
-            </p>
-            <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
-              <p className="text-sm text-blue-800">
-                <strong>Note:</strong> The full task management features will be available
-                in the next phase of development. For now, you can test the authentication
-                system.
-              </p>
-            </div>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <TaskForm onTaskCreated={handleTaskCreated} />
+            <TaskList refreshTrigger={refreshTrigger} />
           </div>
         </div>
       </main>

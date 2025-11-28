@@ -18,7 +18,7 @@ func NewRouter(notificationHandler *handler.NotificationHandler, log *logger.Log
 	r.HandleFunc("/health", notificationHandler.HealthCheck).Methods("GET")
 
 	// Notification routes
-	r.HandleFunc("/api/v1/notifications/send", notificationHandler.SendNotification).Methods("POST")
+	r.HandleFunc("/notifications/send", notificationHandler.SendNotification).Methods("POST")
 
 	return r
 }

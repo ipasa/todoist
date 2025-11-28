@@ -18,11 +18,11 @@ func NewRouter(taskHandler *handler.TaskHandler, log *logger.Logger) *mux.Router
 	r.HandleFunc("/health", taskHandler.HealthCheck).Methods("GET")
 
 	// Task routes
-	r.HandleFunc("/api/v1/tasks", taskHandler.CreateTask).Methods("POST")
-	r.HandleFunc("/api/v1/tasks", taskHandler.GetUserTasks).Methods("GET")
-	r.HandleFunc("/api/v1/tasks/{id}", taskHandler.GetTask).Methods("GET")
-	r.HandleFunc("/api/v1/tasks/{id}", taskHandler.UpdateTask).Methods("PUT")
-	r.HandleFunc("/api/v1/tasks/{id}", taskHandler.DeleteTask).Methods("DELETE")
+	r.HandleFunc("/tasks", taskHandler.CreateTask).Methods("POST")
+	r.HandleFunc("/tasks", taskHandler.GetUserTasks).Methods("GET")
+	r.HandleFunc("/tasks/{id}", taskHandler.GetTask).Methods("GET")
+	r.HandleFunc("/tasks/{id}", taskHandler.UpdateTask).Methods("PUT")
+	r.HandleFunc("/tasks/{id}", taskHandler.DeleteTask).Methods("DELETE")
 
 	return r
 }

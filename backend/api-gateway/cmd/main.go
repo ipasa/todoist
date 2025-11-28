@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -49,18 +50,26 @@ func main() {
 	notificationServiceURL, _ := url.Parse(cfg.NotificationServiceURL)
 
 	// Auth service routes
-	r.PathPrefix("/v1/auth").Handler(createReverseProxy(authServiceURL, "/auth"))
+	authProxy := httputil.NewSingleHostReverseProxy(authServiceURL)
+	authProxy.Director = func(req *http.Request) {
+		req.URL.Scheme = authServiceURL.Scheme
+		req.URL.Host = authServiceURL.Host
+		// Strip /v1 prefix and keep /auth
+		req.URL.Path = strings.TrimPrefix(req.URL.Path, "/v1")
+		req.Host = authServiceURL.Host
+	}
+	r.PathPrefix("/v1/auth").Handler(authProxy)
 
 	// Task service routes (protected)
-	taskProxy := http.StripPrefix("/v1/tasks", createReverseProxy(taskServiceURL, "/tasks"))
+	taskProxy := http.StripPrefix("/v1/tasks", httputil.NewSingleHostReverseProxy(taskServiceURL))
 	r.PathPrefix("/v1/tasks").Handler(middleware.Auth(cfg.JWTSecret)(taskProxy))
 
 	// Project service routes (protected)
-	projectProxy := http.StripPrefix("/v1/projects", createReverseProxy(projectServiceURL, "/projects"))
+	projectProxy := http.StripPrefix("/v1/projects", httputil.NewSingleHostReverseProxy(projectServiceURL))
 	r.PathPrefix("/v1/projects").Handler(middleware.Auth(cfg.JWTSecret)(projectProxy))
 
 	// Notification service routes (protected)
-	notifProxy := http.StripPrefix("/v1/notifications", createReverseProxy(notificationServiceURL, "/notifications"))
+	notifProxy := http.StripPrefix("/v1/notifications", httputil.NewSingleHostReverseProxy(notificationServiceURL))
 	r.PathPrefix("/v1/notifications").Handler(middleware.Auth(cfg.JWTSecret)(notifProxy))
 
 	// Start server
@@ -99,15 +108,3 @@ func main() {
 	log.Info("server stopped")
 }
 
-func createReverseProxy(target *url.URL, pathPrefix string) http.Handler {
-	proxy := httputil.NewSingleHostReverseProxy(target)
-
-	originalDirector := proxy.Director
-	proxy.Director = func(req *http.Request) {
-		originalDirector(req)
-		req.URL.Path = pathPrefix + req.URL.Path[len(pathPrefix):]
-		req.Host = target.Host
-	}
-
-	return proxy
-}

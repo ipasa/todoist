@@ -18,11 +18,11 @@ func NewRouter(projectHandler *handler.ProjectHandler, log *logger.Logger) *mux.
 	r.HandleFunc("/health", projectHandler.HealthCheck).Methods("GET")
 
 	// Project routes
-	r.HandleFunc("/api/v1/projects", projectHandler.CreateProject).Methods("POST")
-	r.HandleFunc("/api/v1/projects", projectHandler.GetUserProjects).Methods("GET")
-	r.HandleFunc("/api/v1/projects/{id}", projectHandler.GetProject).Methods("GET")
-	r.HandleFunc("/api/v1/projects/{id}", projectHandler.UpdateProject).Methods("PUT")
-	r.HandleFunc("/api/v1/projects/{id}", projectHandler.DeleteProject).Methods("DELETE")
+	r.HandleFunc("/projects", projectHandler.CreateProject).Methods("POST")
+	r.HandleFunc("/projects", projectHandler.GetUserProjects).Methods("GET")
+	r.HandleFunc("/projects/{id}", projectHandler.GetProject).Methods("GET")
+	r.HandleFunc("/projects/{id}", projectHandler.UpdateProject).Methods("PUT")
+	r.HandleFunc("/projects/{id}", projectHandler.DeleteProject).Methods("DELETE")
 
 	return r
 }

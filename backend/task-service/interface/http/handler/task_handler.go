@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/todoist/backend/pkg/jwt"
@@ -47,11 +46,13 @@ func NewTaskHandler(
 func (h *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 	var req dto.CreateTaskRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		h.logger.WithError(err).Error("failed to decode request body")
 		h.respondWithError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
 	if err := h.validator.Validate(req); err != nil {
+		h.logger.WithError(err).Error("validation failed")
 		h.respondWithError(w, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -59,13 +60,20 @@ func (h *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 	// Get user ID from JWT token
 	userID, err := h.getUserIDFromToken(r)
 	if err != nil {
+		h.logger.WithError(err).Error("failed to get user ID from token")
 		h.respondWithError(w, http.StatusUnauthorized, "unauthorized")
 		return
 	}
 
+	h.logger.WithFields(map[string]interface{}{
+		"user_id": userID,
+		"title":   req.Title,
+	}).Info("creating task")
+
 	// Create task
 	task, err := h.createTaskUC.Execute(r.Context(), req, userID)
 	if err != nil {
+		h.logger.WithError(err).Error("failed to create task in use case")
 		h.respondWithError(w, http.StatusInternalServerError, "failed to create task")
 		return
 	}
@@ -194,24 +202,13 @@ func (h *TaskHandler) respondWithJSON(w http.ResponseWriter, code int, payload i
 }
 
 func (h *TaskHandler) getUserIDFromToken(r *http.Request) (string, error) {
-	authHeader := r.Header.Get("Authorization")
-	if authHeader == "" {
-		return "", fmt.Errorf("authorization header is required")
+	// Get user ID from header set by API gateway
+	userID := r.Header.Get("X-User-ID")
+	if userID == "" {
+		return "", fmt.Errorf("X-User-ID header is required")
 	}
 
-	// Extract token from "Bearer <token>"
-	tokenParts := strings.Split(authHeader, " ")
-	if len(tokenParts) != 2 || tokenParts[0] != "Bearer" {
-		return "", fmt.Errorf("invalid authorization header format")
-	}
-
-	token := tokenParts[1]
-	claims, err := h.jwtService.ValidateToken(token)
-	if err != nil {
-		return "", err
-	}
-
-	return claims.UserID.String(), nil
+	return userID, nil
 }
 
 func parseInt(s string) int {

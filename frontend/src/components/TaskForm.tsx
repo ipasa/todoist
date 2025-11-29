@@ -35,7 +35,15 @@ export function TaskForm({ onTaskCreated }: TaskFormProps) {
     setError(null);
 
     try {
-      await taskApi.createTask(formData);
+      // Convert due_date to RFC3339 format if provided
+      const taskData = { ...formData };
+      if (taskData.due_date) {
+        // Convert YYYY-MM-DD to RFC3339 format (YYYY-MM-DDTHH:mm:ssZ)
+        const date = new Date(taskData.due_date);
+        taskData.due_date = date.toISOString();
+      }
+
+      await taskApi.createTask(taskData);
       setSuccess(true);
       setFormData({ title: '', description: '', priority: 1 });
       onTaskCreated?.();

@@ -21,7 +21,7 @@ export function TaskList({ refreshTrigger }: TaskListProps) {
 
     try {
       const response = await taskApi.getUserTasks();
-      setTasks(response.data);
+      setTasks(response.data || []);
     } catch (err: any) {
       setError(err.response?.data?.error?.message || "Failed to fetch tasks");
     } finally {

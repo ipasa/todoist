@@ -61,15 +61,36 @@ func main() {
 	r.PathPrefix("/v1/auth").Handler(authProxy)
 
 	// Task service routes (protected)
-	taskProxy := http.StripPrefix("/v1/tasks", httputil.NewSingleHostReverseProxy(taskServiceURL))
+	taskProxy := httputil.NewSingleHostReverseProxy(taskServiceURL)
+	taskProxy.Director = func(req *http.Request) {
+		req.URL.Scheme = taskServiceURL.Scheme
+		req.URL.Host = taskServiceURL.Host
+		// Strip /v1 prefix and keep /tasks
+		req.URL.Path = strings.TrimPrefix(req.URL.Path, "/v1")
+		req.Host = taskServiceURL.Host
+	}
 	r.PathPrefix("/v1/tasks").Handler(middleware.Auth(cfg.JWTSecret)(taskProxy))
 
 	// Project service routes (protected)
-	projectProxy := http.StripPrefix("/v1/projects", httputil.NewSingleHostReverseProxy(projectServiceURL))
+	projectProxy := httputil.NewSingleHostReverseProxy(projectServiceURL)
+	projectProxy.Director = func(req *http.Request) {
+		req.URL.Scheme = projectServiceURL.Scheme
+		req.URL.Host = projectServiceURL.Host
+		// Strip /v1 prefix and keep /projects
+		req.URL.Path = strings.TrimPrefix(req.URL.Path, "/v1")
+		req.Host = projectServiceURL.Host
+	}
 	r.PathPrefix("/v1/projects").Handler(middleware.Auth(cfg.JWTSecret)(projectProxy))
 
 	// Notification service routes (protected)
-	notifProxy := http.StripPrefix("/v1/notifications", httputil.NewSingleHostReverseProxy(notificationServiceURL))
+	notifProxy := httputil.NewSingleHostReverseProxy(notificationServiceURL)
+	notifProxy.Director = func(req *http.Request) {
+		req.URL.Scheme = notificationServiceURL.Scheme
+		req.URL.Host = notificationServiceURL.Host
+		// Strip /v1 prefix and keep /notifications
+		req.URL.Path = strings.TrimPrefix(req.URL.Path, "/v1")
+		req.Host = notificationServiceURL.Host
+	}
 	r.PathPrefix("/v1/notifications").Handler(middleware.Auth(cfg.JWTSecret)(notifProxy))
 
 	// Start server

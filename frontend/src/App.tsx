@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
-import { Dashboard } from './pages/Dashboard';
+import { DashboardNew } from './pages/DashboardNew';
 import { useAuthStore } from './store/authStore';
 
 const queryClient = new QueryClient();
@@ -46,7 +46,7 @@ function App() {
             path="/dashboard"
             element={
               <ProtectedRoute>
-                <Dashboard />
+                <DashboardNew />
               </ProtectedRoute>
             }
           />
